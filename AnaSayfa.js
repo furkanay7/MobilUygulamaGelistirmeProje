@@ -1,10 +1,24 @@
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import React, { useState, useEffect } from 'react'
+import DropDownPicker from 'react-native-dropdown-picker';
 
 const AnaSayfa = () => {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(null); // Seçilen değer
+  const [items, setItems] = useState([
+    {label: 'Ders Çalışma', value: 'ders'},
+    {label: 'Kodlama', value: 'kodlama'},
+    {label: 'Proje Geliştirme', value: 'proje'},
+    {label: 'Kitap Okuma', value: 'kitap'},
+    {label: 'Diğer', value: 'diger'}
+  ]);
+
   const [initialTimes, setInitialTimes] = useState(25);
   const [leftTimes, setLeftTimes] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
+  
+
+  
 
   // Sayaç Mantığı
   useEffect(() => {
@@ -30,7 +44,13 @@ const AnaSayfa = () => {
   };
 
   // Buton Fonksiyonları
-  const handleStart = () => setIsActive(true);
+  const handleStart = () => {
+    if (selectedCategory === 'Seçiniz') {
+      alert("Lütfen bu seans için bir kategori seçiniz!");
+      return;
+    }
+    setIsActive(true);
+  };
   const handlePause = () => setIsActive(false);
   const handleReset = () => {
     setIsActive(false);
@@ -50,6 +70,21 @@ const AnaSayfa = () => {
   return (
     <View style={styles.container}>
       <Text>AnaSayfa</Text>
+
+      <Text style={styles.label}>Kategori Seç</Text>
+      <View style={{ zIndex: 1000, width: '50%', marginBottom: 10 }}>
+        <DropDownPicker
+          open={open}
+          value={value}
+          items={items}
+          setOpen={setOpen}
+          setValue={setValue}
+          setItems={setItems}
+          placeholder="Bir kategori seçiniz..."
+          style={{ borderColor: 'white' }}
+          dropDownContainerStyle={{ borderColor: 'white' }}
+        />
+      </View>
 
       {/* Sayaç Göstergesi */}
       <Text>{formatTime(leftTimes)}</Text>
@@ -90,5 +125,9 @@ const styles = StyleSheet.create({
     flex: 1, 
     justifyContent: 'center', 
     alignItems: 'center'
+  },
+  label: {
+    marginTop: 20,
+    marginBottom: 5,
   }
 })
