@@ -1,5 +1,5 @@
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
-import React, { useState, useEffect } from 'react'
+import { StyleSheet, Text, View, TouchableOpacity, AppState } from 'react-native'
+import React, { useState, useEffect, useRef } from 'react'
 import DropDownPicker from 'react-native-dropdown-picker';
 
 const AnaSayfa = () => {
@@ -12,11 +12,35 @@ const AnaSayfa = () => {
     {label: 'Kitap Okuma', value: 'kitap'},
     {label: 'Diğer', value: 'diger'}
   ]);
-
   const [initialTimes, setInitialTimes] = useState(25);
   const [leftTimes, setLeftTimes] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
+  const [distractionCount, setDistractionCount] = useState(0);
+
+  const appState = useRef(AppState.currentState);
   
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/active/) && 
+        nextAppState.match(/inactive|background/)
+      ) {
+        // Uygulama arka plana atıldı!
+        if (isActive) {
+          setIsActive(false); // Sayacı durdur
+          setDistractionCount(prev => prev + 1); // Hatayı 1 artır
+          alert("Dikkat Dağınıklığı! Uygulamadan çıktığınız için sayaç duraklatıldı.");
+        }
+      }
+
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isActive]);
+
 
   
 
@@ -88,6 +112,11 @@ const AnaSayfa = () => {
 
       {/* Sayaç Göstergesi */}
       <Text>{formatTime(leftTimes)}</Text>
+
+          {distractionCount > 0 && (
+            <Text>Dikkat Dağınıklığı: {distractionCount}
+</Text>
+          )}
 
       {/* Süre Ayarlama (+/-) */}
       <View>
