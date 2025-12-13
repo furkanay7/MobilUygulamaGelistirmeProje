@@ -1,6 +1,5 @@
-import { StyleSheet, Text, View, TouchableOpacity, AppState } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, AppState, ScrollView } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
-import DropDownPicker from 'react-native-dropdown-picker';
 
 const AnaSayfa = () => {
   const [open, setOpen] = useState(false);
@@ -93,55 +92,75 @@ const AnaSayfa = () => {
 
   return (
     <View style={styles.container}>
-      <Text>AnaSayfa</Text>
 
-      <Text style={styles.label}>Kategori Seç</Text>
-      <View style={{ zIndex: 1000, width: '50%', marginBottom: 10 }}>
-        <DropDownPicker
-          open={open}
-          value={value}
-          items={items}
-          setOpen={setOpen}
-          setValue={setValue}
-          setItems={setItems}
-          placeholder="Bir kategori seçiniz..."
-          style={{ borderColor: 'white' }}
-          dropDownContainerStyle={{ borderColor: 'white' }}
-        />
+    <View style={styles.kategori}>
+      <Text style={styles.kategoriText}>Kategori</Text>
+      
+        <View style={styles.scroll}>
+    <ScrollView 
+      // horizontal komutunu SİLDİK
+      showsVerticalScrollIndicator={true} // Dikey çubuk görünsün
+      contentContainerStyle={styles.listContainer}
+      nestedScrollEnabled={true} // İç içe kaydırma sorunu olmasın
+    >
+      {items.map((item) => (
+        <TouchableOpacity
+          key={item.value}
+          onPress={() => setValue(item.value)}
+          style={[
+            styles.listItem,
+            value === item.value && styles.seciliListItem
+          ]}
+        >
+          <Text style={[
+            styles.listItemText,
+            value === item.value && styles.seciliListItemText
+          ]}>
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
       </View>
+      <View style={styles.zaman}> 
+        <TouchableOpacity style={styles.butonZaman} onPress={() => changeTime(-1)}>
+          <Text style={styles.zamanText}>-1</Text>
+        </TouchableOpacity>
 
-      {/* Sayaç Göstergesi */}
-      <Text>{formatTime(leftTimes)}</Text>
+      <View style={styles.sayac}>
+         {/* Sayaç Göstergesi */}
+      <Text style={styles.sayacText}>{formatTime(leftTimes)}</Text>
 
           {distractionCount > 0 && (
-            <Text>Dikkat Dağınıklığı: {distractionCount}
-</Text>
+            <Text>Dikkat Dağınıklığı: {distractionCount} </Text>
           )}
+      </View>
+     
 
       {/* Süre Ayarlama (+/-) */}
-      <View>
-        <TouchableOpacity onPress={() => changeTime(+1)}>
-          <Text>+1 dk</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => changeTime(-1)}>
-          <Text>-1 dk</Text>
+      
+        
+        <TouchableOpacity style={styles.butonZaman} onPress={() => changeTime(+1)}>
+          <Text style={styles.zamanText}>+1</Text>
         </TouchableOpacity>
       </View>
 
       {/* Kontrol Butonları */}
-      <View>
+      <View style={styles.buton}>
+        <TouchableOpacity style={styles.butonTas} onPress={handleReset}>
+          <Text style={styles.butonText}>Sıfırla</Text>
+        </TouchableOpacity>
         {!isActive ? (
-          <TouchableOpacity onPress={handleStart}>
-            <Text>Başlat</Text>
+          <TouchableOpacity style={styles.butonTas} onPress={handleStart}>
+            <Text style={styles.butonText}>Başlat</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity onPress={handlePause}>
-            <Text>Duraklat</Text>
+          <TouchableOpacity style={styles.butonTas} onPress={handlePause}>
+            <Text style={styles.butonText}>Duraklat</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity onPress={handleReset}>
-          <Text>Sıfırla</Text>
-        </TouchableOpacity>
+        
       </View>
     </View>
   )
@@ -152,11 +171,89 @@ export default AnaSayfa
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    justifyContent: 'center', 
+    paddingTop:30,
     alignItems: 'center'
   },
-  label: {
-    marginTop: 20,
-    marginBottom: 5,
+  kategori:{
+    width:'60%',
+    alignItems:'center',
+  },
+  scroll: {
+    width: '100%',      
+    height: 130,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'black',
+    overflow: 'hidden'
+  },
+  listContainer: {
+    gap: 0, // Elemanlar arası boşluk
+  },
+  listItem: {
+    width: '100%',    
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'white',
+    alignItems: 'center', 
+  },
+  seciliListItem: { 
+    borderColor: 'black',
+  },
+  listItemText: {
+    fontSize: 12,
+  },
+  seciliListItemText: {
+    fontWeight: 'bold',
+  },
+  kategoriText: {
+    fontSize:30,
+    marginBottom: 10,
+  },
+  zaman:{
+    width:'100%',
+    flexDirection:'row',
+    justifyContent:'space-evenly',
+    alignItems:'center',
+    margin:90
+  }, 
+  butonZaman:{
+    width:70,
+    height:70,
+    borderWidth:2,
+    borderRadius:50,
+    justifyContent:'center',
+    alignItems:'center'
+  }, 
+  zamanText:{
+    fontSize:20
+  },
+  sayac:{
+    width:150,
+    height:100,
+    borderWidth:2,
+    borderRadius:20,
+    justifyContent:'center',
+    alignItems:'center'
+  },
+  sayacText:{
+    fontSize:45
+  },
+  buton:{
+    width:'100%',
+    flexDirection:'row',
+    justifyContent: 'space-evenly',
+    alignItems:'center',
+  },
+  butonTas: {
+    width:80,
+    height:80,
+    borderWidth:2,
+    borderRadius:20,
+    justifyContent:'center',
+    alignItems:'center'
+  },
+  butonText:{
   }
 })
