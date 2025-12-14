@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, AppState, ScrollView } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, AppState, ScrollView, Alert } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import * as SQLite from 'expo-sqlite';
 
@@ -18,6 +18,7 @@ const AnaSayfa = () => {
   const [leftTimes, setLeftTimes] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [distractionCount, setDistractionCount] = useState(0);
+  const [lastSession, setLastSession] = useState(null);
 
 
   useEffect(() => {
@@ -45,13 +46,25 @@ const AnaSayfa = () => {
   const seansiKaydet = async () => {
     
     const bugun = new Date().toISOString().split('T')[0]; 
-    
+
+    const kategoriLabel = items.find(item => item.value === value)?.label || value;
+
     try {
       await db.runAsync(
         'INSERT INTO seanslar (kategori, sure, tarih, dikkat_daginikligi) VALUES (?, ?, ?, ?)',
         [value, initialTimes, bugun, distractionCount]
       );
+
+
       console.log("Seans başarıyla kaydedildi!");
+
+      Alert.alert(
+        "Seans Tamamlandı!",
+        `Kategori: ${kategoriLabel}\nSüre: ${initialTimes} dk\nDikkat Dağınıklığı: ${distractionCount}`,
+        [
+          { text: "Tamam", onPress: () => console.log("Alert kapandı") }
+        ]
+      );
     } catch (error) {
       console.error("Kayıt hatası:", error);
     }
@@ -94,7 +107,6 @@ const AnaSayfa = () => {
     } else if (leftTimes === 0) {
       setIsActive(false);
       seansiKaydet(); 
-      alert("Süre Doldu! Veriler kaydedildi.");
     }
 
     return () => clearInterval(interval);
@@ -109,7 +121,7 @@ const AnaSayfa = () => {
  
   const handleStart = () => {
     if (!value) { 
-      alert("⚠️ Lütfen bu seans için bir kategori seçiniz!");
+      alert("Lütfen bu seans için bir kategori seçiniz!");
       return; 
     }
     setIsActive(true);
@@ -118,6 +130,7 @@ const AnaSayfa = () => {
   const handleReset = () => {
     setIsActive(false);
     setLeftTimes(initialTimes * 60);
+    setDistractionCount(0);
   };
 
   const changeTime = (amount) => {
@@ -193,6 +206,8 @@ const AnaSayfa = () => {
             <Text style={styles.butonText}>Duraklat</Text>
           </TouchableOpacity>
         )}
+
+       
         
       </View>
     </View>
