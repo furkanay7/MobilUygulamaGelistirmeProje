@@ -1,9 +1,12 @@
 import { StyleSheet, Text, View, TouchableOpacity, AppState, ScrollView } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
+import * as SQLite from 'expo-sqlite';
+
+
+const db = SQLite.openDatabaseSync('pomodoro.db');
 
 const AnaSayfa = () => {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState(null); // Seçilen değer
+  const [value, setValue] = useState(null); 
   const [items, setItems] = useState([
     {label: 'Ders Çalışma', value: 'ders'},
     {label: 'Kodlama', value: 'kodlama'},
@@ -15,6 +18,44 @@ const AnaSayfa = () => {
   const [leftTimes, setLeftTimes] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [distractionCount, setDistractionCount] = useState(0);
+
+
+  useEffect(() => {
+    async function setupDatabase() {
+      try {
+        await db.execAsync(`
+          PRAGMA journal_mode = WAL;
+          CREATE TABLE IF NOT EXISTS seanslar (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kategori TEXT NOT NULL,
+            sure INTEGER NOT NULL,
+            tarih TEXT NOT NULL,
+            dikkat_daginikligi INTEGER NOT NULL
+          );
+        `);
+        console.log("Tablo oluşturuldu!");
+      } catch (error) {
+        console.log("Tablo oluşturulurken hata:", error);
+      }
+    }
+
+    setupDatabase();
+  }, []);
+
+  const seansiKaydet = async () => {
+    
+    const bugun = new Date().toISOString().split('T')[0]; 
+    
+    try {
+      await db.runAsync(
+        'INSERT INTO seanslar (kategori, sure, tarih, dikkat_daginikligi) VALUES (?, ?, ?, ?)',
+        [value, initialTimes, bugun, distractionCount]
+      );
+      console.log("Seans başarıyla kaydedildi!");
+    } catch (error) {
+      console.error("Kayıt hatası:", error);
+    }
+  };
 
   const appState = useRef(AppState.currentState);
   
@@ -43,7 +84,6 @@ const AnaSayfa = () => {
 
   
 
-  // Sayaç Mantığı
   useEffect(() => {
     let interval = null;
 
@@ -53,24 +93,24 @@ const AnaSayfa = () => {
       }, 1000);
     } else if (leftTimes === 0) {
       setIsActive(false);
-      alert("Süre Doldu!");
+      seansiKaydet(); 
+      alert("Süre Doldu! Veriler kaydedildi.");
     }
 
     return () => clearInterval(interval);
   }, [isActive, leftTimes]);
 
-  // Süreyi 25:00 formatına çeviren fonksiyon
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
-  // Buton Fonksiyonları
+ 
   const handleStart = () => {
-    if (selectedCategory === 'Seçiniz') {
-      alert("Lütfen bu seans için bir kategori seçiniz!");
-      return;
+    if (!value) { 
+      alert("⚠️ Lütfen bu seans için bir kategori seçiniz!");
+      return; 
     }
     setIsActive(true);
   };
@@ -98,10 +138,9 @@ const AnaSayfa = () => {
       
         <View style={styles.scroll}>
     <ScrollView 
-      // horizontal komutunu SİLDİK
-      showsVerticalScrollIndicator={true} // Dikey çubuk görünsün
+      showsVerticalScrollIndicator={true} 
       contentContainerStyle={styles.listContainer}
-      nestedScrollEnabled={true} // İç içe kaydırma sorunu olmasın
+      nestedScrollEnabled={true} 
     >
       {items.map((item) => (
         <TouchableOpacity
@@ -129,24 +168,18 @@ const AnaSayfa = () => {
         </TouchableOpacity>
 
       <View style={styles.sayac}>
-         {/* Sayaç Göstergesi */}
       <Text style={styles.sayacText}>{formatTime(leftTimes)}</Text>
 
           {distractionCount > 0 && (
             <Text>Dikkat Dağınıklığı: {distractionCount} </Text>
           )}
       </View>
-     
-
-      {/* Süre Ayarlama (+/-) */}
-      
         
         <TouchableOpacity style={styles.butonZaman} onPress={() => changeTime(+1)}>
           <Text style={styles.zamanText}>+1</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Kontrol Butonları */}
       <View style={styles.buton}>
         <TouchableOpacity style={styles.butonTas} onPress={handleReset}>
           <Text style={styles.butonText}>Sıfırla</Text>
@@ -188,7 +221,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   listContainer: {
-    gap: 0, // Elemanlar arası boşluk
   },
   listItem: {
     width: '100%',    
@@ -219,8 +251,8 @@ const styles = StyleSheet.create({
     margin:90
   }, 
   butonZaman:{
-    width:70,
-    height:70,
+    width:60,
+    height:60,
     borderWidth:2,
     borderRadius:50,
     justifyContent:'center',
@@ -230,7 +262,7 @@ const styles = StyleSheet.create({
     fontSize:20
   },
   sayac:{
-    width:150,
+    width:200,
     height:100,
     borderWidth:2,
     borderRadius:20,
@@ -238,7 +270,7 @@ const styles = StyleSheet.create({
     alignItems:'center'
   },
   sayacText:{
-    fontSize:45
+    fontSize:65
   },
   buton:{
     width:'100%',
