@@ -1,7 +1,10 @@
-import { StyleSheet, Text, View, TouchableOpacity, AppState, ScrollView, Alert } from 'react-native'
+import { StyleSheet, View, AppState, Alert } from 'react-native'
 import React, { useState, useEffect, useRef } from 'react'
 import * as SQLite from 'expo-sqlite';
 
+import Kategori from './components/Kategori';
+import Sayac from './components/Sayac';
+import Butonlar from './components/Butonlar';
 
 const db = SQLite.openDatabaseSync('pomodoro.db');
 
@@ -19,7 +22,6 @@ const AnaSayfa = () => {
   const [isActive, setIsActive] = useState(false);
   const [distractionCount, setDistractionCount] = useState(0);
 
-  const timerRef = useRef(null);
 
   useEffect(() => {
     async function setupDatabase() {
@@ -34,7 +36,6 @@ const AnaSayfa = () => {
             dikkat_daginikligi INTEGER NOT NULL
         )`);
 
-        console.log("Tablo oluşturuldu!");
       } catch (error) {
         console.log("Tablo oluşturulurken hata:", error);
       }
@@ -118,11 +119,7 @@ const AnaSayfa = () => {
     return () => clearInterval(interval);
   }, [isActive, leftTimes]);
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes < 10 ? '0' : ''}${minutes}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  
 
  
   const handleStart = () => {
@@ -155,93 +152,34 @@ const AnaSayfa = () => {
     });
   };
 
-  const startChanging = (amount) => {
-    if (isActive) return; 
-    changeTime(amount); 
-    timerRef.current = setInterval(() => {
-      changeTime(amount);
-    }, 100);
-  };
-
-  const stopChanging = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
+  
 
   return (
     <View style={styles.container}>
+      <Kategori
+        items={items} 
+        value={value} 
+        setValue={setValue} 
+      />
 
-    <View style={styles.kategori}>
-      <Text style={styles.kategoriText}>Kategori</Text>
+      <Sayac
+        leftTimes={leftTimes} 
+        isActive={isActive} 
+        changeTime={changeTime} 
+      />
+
+      <Butonlar 
+        isActive={isActive} 
+        leftTimes={leftTimes} 
+        initialTimes={initialTimes} 
+        handleStart={handleStart} 
+        handlePause={handlePause} 
+        handleReset={handleReset} 
+      />
+    
       
-        <View style={styles.scroll}>
-    <ScrollView 
-      showsVerticalScrollIndicator={true} 
-      contentContainerStyle={styles.listContainer}
-      nestedScrollEnabled={true} 
-    >
-      {items.map((item) => (
-        <TouchableOpacity
-          key={item.value}
-          onPress={() => setValue(item.value)}
-          style={[
-            styles.listItem,
-            value === item.value && styles.seciliListItem
-          ]}
-        >
-          <Text style={[
-            styles.listItemText,
-            value === item.value && styles.seciliListItemText
-          ]}>
-            {item.label}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
-  </View>
-      </View>
-      <View style={styles.zaman}> 
-        <TouchableOpacity 
-          style={styles.butonZaman} 
-          onPressIn={() => startChanging(-1)} 
-          onPressOut={stopChanging}
-        >
-          <Text style={styles.zamanText}>-1</Text>
-        </TouchableOpacity>
 
-      <View style={styles.sayac}>
-      <Text style={styles.sayacText}>{formatTime(leftTimes)}</Text>
-      </View>
-        
-       <TouchableOpacity 
-          style={styles.butonZaman} 
-          onPressIn={() => startChanging(+1)} 
-          onPressOut={stopChanging}
-        >
-          <Text style={styles.zamanText}>+1</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.buton}>
-        <TouchableOpacity style={styles.butonTas} onPress={handleReset}>
-          <Text style={styles.butonText}>Sıfırla</Text>
-        </TouchableOpacity>
-        {!isActive ? (
-          <TouchableOpacity style={styles.butonTas} onPress={handleStart}>
-            <Text style={styles.butonText}>
-              {leftTimes === initialTimes * 60 ? "Başlat" : "Devam"} </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.butonTas} onPress={handlePause}>
-            <Text style={styles.butonText}>Duraklat</Text>
-          </TouchableOpacity>
-        )}
-
-       
-        
-      </View>
+      
     </View>
   )
 }
@@ -254,88 +192,7 @@ const styles = StyleSheet.create({
     paddingTop:20,
     alignItems: 'center'
   },
-  kategori:{
-    width:'60%',
-    alignItems:'center',
-  },
-  scroll: {
-    width: '100%',      
-    height: 130,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'black',
-    overflow: 'hidden'
-  },
-  listItem: {
-    width: '100%',    
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'white',
-    alignItems: 'center', 
-  },
-  seciliListItem: { 
-    borderColor: 'black',
-  },
-  listItemText: {
-    fontSize: 12,
-  },
-  seciliListItemText: {
-    fontWeight: 'bold',
-  },
-  kategoriText: {
-    fontSize: 25, 
-    fontWeight: 'bold', 
-    marginBottom: 10, 
-    color: 'black', 
-  },
-  zaman:{
-    width:'100%',
-    flexDirection:'row',
-    justifyContent:'space-evenly',
-    alignItems:'center',
-    margin:90,
-  }, 
-  butonZaman:{
-    width:60,
-    height:60,
-    borderWidth:2,
-    borderRadius:50,
-    justifyContent:'center',
-    backgroundColor: 'white',
-    alignItems:'center'
-  }, 
-  zamanText:{
-    fontSize:20
-  },
-  sayac:{
-    width:200,
-    height:100,
-    borderWidth:3,
-    borderRadius:20,
-    justifyContent:'center',
-    alignItems:'center',
-    backgroundColor: 'white',
-  },
-  sayacText:{
-    fontSize:65
-  },
-  buton:{
-    width:'100%',
-    flexDirection:'row',
-    justifyContent: 'space-evenly',
-    alignItems:'center',
-  },
-  butonTas: {
-    width:80,
-    height:80,
-    borderWidth:2,
-    borderRadius:20,
-    justifyContent:'center',
-    backgroundColor: 'white',
-    alignItems:'center'
-  },
-  butonText:{
-  }
+  
+  
+  
 })

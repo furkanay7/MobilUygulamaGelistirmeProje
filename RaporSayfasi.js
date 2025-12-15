@@ -1,9 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import * as SQLite from 'expo-sqlite';
-import { BarChart } from 'react-native-chart-kit';
-import { PieChart } from "react-native-gifted-charts"; 
+
+import Istatistikler from './components/Istatistikler';
+import CubukGrafik from './components/CubukGrafik';
+import PastaGrafik from './components/PastaGrafik';
 
 const db = SQLite.openDatabaseSync('pomodoro.db');
 
@@ -111,86 +113,23 @@ const RaporSayfasi = () => {
     }, [])
   );
 
-  const pieKategori = () => {
-    return (
-      <View style={styles.pieKategoriContainer}>
-        {pieData.map((item, index) => (
-          <View key={index} style={styles.pieKategoriItem}>
-            <View>
-              <Text style={styles.yuzdeText}>%{item.yuzdeDegeri} </Text>
-            </View>
-            <Text style={styles.pieKategoriText}>{item.kategoriAdi}</Text>
-          </View>
-        ))}
-      </View>
-    );
-  };
+  
 
   return (
     <ScrollView>
       <View style={styles.container}>
         <Text style={styles.anaBaslik}>Genel İstatistikler</Text>
 
-        <View style={styles.icContainer}>
-          <View>
-            <Text style={styles.icBaslik}>Bugün Toplam Odak</Text>
-            <Text style={styles.icBaslik}>{stats.bugunToplam} dk</Text>
-          </View>
-          <View>
-            <Text style={styles.icBaslik}>Genel Toplam Odak</Text>
-            <Text style={styles.icBaslik}>{stats.genelToplam} dk</Text>
-          </View>
-          <View>
-            <Text style={styles.icBaslik}>Bugün Dikkat Dağınıklığı</Text>
-            <Text style={styles.icBaslik}>{stats.bugünToplamDikkat}</Text>
-          </View>
-          <View>
-            <Text style={styles.icBaslik}>Genel Dikkat Dağınıklığı</Text>
-            <Text style={styles.icBaslik}>{stats.genelToplamDikkat}</Text>
-          </View>
-        </View>
+        <Istatistikler stats={stats} />
+        
 
         <Text style={styles.anaBaslik}>Grafikler</Text>
         
-        <View style={styles.icContainer}>
-          
-          <Text style={styles.icBaslik}>Son 7 Günlük Süreler</Text>
-          
-          <BarChart
-            data={barData}
-            width={330} 
-            height={240}
-            chartConfig={styles.barChartConfig}
-            
-            style={{
-              paddingRight: 0,
-              paddingLeft: 0,
-              paddingTop: 10,
-              borderRadius: 16
-            }}
-            
-            showValuesOnTopOfBars={true}
-            withInnerLines={false}
-            withHorizontalLabels={false}
-            fromZero={true}
-          />
-        </View>
-
+        <CubukGrafik barData={barData} />
         
-        <View style={styles.icContainer}>
-            <Text style={styles.icBaslik}>Kategori Dağılımı</Text>
-              <View style={{ alignItems: 'center', marginVertical: 20 }}>
-                <PieChart
-                  data={pieData}    
-                  showText={true} 
-                  textColor="black"        
-                  strokeColor="black"       
-                  strokeWidth={1}
-                />
-              </View>
-              {pieKategori()}
-          
-        </View>
+        <PastaGrafik pieData={pieData} />
+        
+        
       </View>
     </ScrollView>
   );
@@ -210,51 +149,6 @@ const styles = StyleSheet.create({
     marginBottom: 10, 
     color: 'black',  
   },
-  icContainer: { 
-    flexDirection: 'column',
-    justifyContent: 'space-evenly', 
-    marginBottom: 30,
-    backgroundColor:'white',
-    borderRadius: 16,
-    padding: 15,
-    width: '90%',
-    borderWidth: 1, 
-    borderColor: 'black',
-    gap: 15,
-  },
-  icBaslik: { 
-    fontSize: 14, 
-    color: 'black', 
-    textAlign: 'center',
-  },
-  pieKategoriContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 10,
-    
-  },
-  pieKategoriItem: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    padding:10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'black', 
-  },
-  pieKategoriText: {
-    fontSize: 14,
-    color: 'black',
-  },
-  yuzdeText: {
-    color: 'black',
-    fontSize: 14,
-  },
-  barChartConfig: {
-    backgroundGradientFrom: "white",
-    backgroundGradientTo: "white",
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    style: { borderRadius: 16 },
-    barPercentage: 0.7,
-  },
+  
+  
 });
