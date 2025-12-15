@@ -60,7 +60,7 @@ const RaporSayfasi = () => {
       const PieData = Object.keys(kategoriDagilimi).map((kategori) => {
         const sure = kategoriDagilimi[kategori];
         const yuzde = toplamChartSuresi > 0 ? Math.round((sure / toplamChartSuresi) * 100) : 0;
-        const isBigSlice = yuzde > 15;
+        const isBigSlice = yuzde > 6;
         const labelText = `%${yuzde}`;
 
         return {
@@ -152,10 +152,8 @@ const RaporSayfasi = () => {
 
         <Text style={styles.anaBaslik}>Grafikler</Text>
         
-        {/* 🔥 YENİ KAPSAYICI KUTU (Beyaz Kart) */}
         <View style={styles.icContainer}>
           
-          {/* Başlık Artık Kutunun İçinde */}
           <Text style={styles.icBaslik}>Son 7 Günlük Süreler</Text>
           
           <BarChart
@@ -234,10 +232,11 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 10,
+    
   },
   pieKategoriItem: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     padding:10,
     borderRadius: 8,
     borderWidth: 1,

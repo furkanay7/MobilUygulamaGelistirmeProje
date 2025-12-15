@@ -8,18 +8,18 @@ const db = SQLite.openDatabaseSync('pomodoro.db');
 const AnaSayfa = () => {
   const [value, setValue] = useState(null); 
   const [items, setItems] = useState([
-    {label: 'Ders Çalışma', value: 'ders'},
-    {label: 'Kodlama', value: 'kodlama'},
-    {label: 'Proje Geliştirme', value: 'proje'},
-    {label: 'Kitap Okuma', value: 'kitap'},
-    {label: 'Diğer', value: 'diger'}
+    {label: 'Ders Çalışma', value: 'Ders Çalışma'},
+    {label: 'Kodlama', value: 'Kodlama'},
+    {label: 'Proje Geliştirme', value: 'Proje Geliştirme'},
+    {label: 'Kitap Okuma', value: 'Kitap Okuma'},
+    {label: 'Diğer', value: 'Diğer'}
   ]);
   const [initialTimes, setInitialTimes] = useState(25);
   const [leftTimes, setLeftTimes] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [distractionCount, setDistractionCount] = useState(0);
-  const [lastSession, setLastSession] = useState(null);
 
+  const timerRef = useRef(null);
 
   useEffect(() => {
     async function setupDatabase() {
@@ -32,8 +32,8 @@ const AnaSayfa = () => {
             sure INTEGER NOT NULL,
             tarih TEXT NOT NULL,
             dikkat_daginikligi INTEGER NOT NULL
-          );
-        `);
+        )`);
+
         console.log("Tablo oluşturuldu!");
       } catch (error) {
         console.log("Tablo oluşturulurken hata:", error);
@@ -55,14 +55,13 @@ const AnaSayfa = () => {
         [value, initialTimes, bugun, distractionCount]
       );
 
-
-      console.log("Seans başarıyla kaydedildi!");
-
       Alert.alert(
         "Seans Tamamlandı!",
-        `Kategori: ${kategoriLabel}\nSüre: ${initialTimes} dk\nDikkat Dağınıklığı: ${distractionCount}`,
+        `Süre: ${initialTimes} dk
+        Kategori: ${kategoriLabel}
+        Dikkat Dağınıklığı: ${distractionCount}`,
         [
-          { text: "Tamam", onPress: () => console.log("Alert kapandı") }
+          { text: "Tamam" }
         ]
       );
     } catch (error) {
@@ -78,11 +77,16 @@ const AnaSayfa = () => {
         appState.current.match(/active/) && 
         nextAppState.match(/inactive|background/)
       ) {
-        // Uygulama arka plana atıldı!
         if (isActive) {
-          setIsActive(false); // Sayacı durdur
-          setDistractionCount(prev => prev + 1); // Hatayı 1 artır
-          alert("Dikkat Dağınıklığı! Uygulamadan çıktığınız için sayaç duraklatıldı.");
+          setIsActive(false); 
+          setDistractionCount(prev => prev + 1); // 
+          Alert.alert(
+        "Dikkat Dağınıklığı!",
+        "Uygulamadan çıktığınız için sayaç duraklatıldı.",
+        [
+          { text: "Tamam" }
+        ]
+      );
         }
       }
 
@@ -107,6 +111,8 @@ const AnaSayfa = () => {
     } else if (leftTimes === 0) {
       setIsActive(false);
       seansiKaydet(); 
+      setLeftTimes(initialTimes * 60);
+      setDistractionCount(0);
     }
 
     return () => clearInterval(interval);
@@ -121,7 +127,12 @@ const AnaSayfa = () => {
  
   const handleStart = () => {
     if (!value) { 
-      alert("Lütfen bu seans için bir kategori seçiniz!");
+      Alert.alert(
+        "Kategori Seçilmedi!",
+        "Lütfen kategori seçin.",
+        [
+          { text: "Tamam", onPress: () => console.log("Alert kapandı") }
+        ])
       return; 
     }
     setIsActive(true);
@@ -134,12 +145,28 @@ const AnaSayfa = () => {
   };
 
   const changeTime = (amount) => {
-    if (!isActive) {
-      const newTime = initialTimes + amount;
+    setInitialTimes((prevTime) => {
+      const newTime = prevTime + amount;
       if (newTime > 0) {
-        setInitialTimes(newTime);
         setLeftTimes(newTime * 60);
+        return newTime;
       }
+      return prevTime;
+    });
+  };
+
+  const startChanging = (amount) => {
+    if (isActive) return; 
+    changeTime(amount); 
+    timerRef.current = setInterval(() => {
+      changeTime(amount);
+    }, 100);
+  };
+
+  const stopChanging = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
   };
 
@@ -176,19 +203,23 @@ const AnaSayfa = () => {
   </View>
       </View>
       <View style={styles.zaman}> 
-        <TouchableOpacity style={styles.butonZaman} onPress={() => changeTime(-1)}>
+        <TouchableOpacity 
+          style={styles.butonZaman} 
+          onPressIn={() => startChanging(-1)} 
+          onPressOut={stopChanging}
+        >
           <Text style={styles.zamanText}>-1</Text>
         </TouchableOpacity>
 
       <View style={styles.sayac}>
       <Text style={styles.sayacText}>{formatTime(leftTimes)}</Text>
-
-          {distractionCount > 0 && (
-            <Text>Dikkat Dağınıklığı: {distractionCount} </Text>
-          )}
       </View>
         
-        <TouchableOpacity style={styles.butonZaman} onPress={() => changeTime(+1)}>
+       <TouchableOpacity 
+          style={styles.butonZaman} 
+          onPressIn={() => startChanging(+1)} 
+          onPressOut={stopChanging}
+        >
           <Text style={styles.zamanText}>+1</Text>
         </TouchableOpacity>
       </View>
@@ -199,7 +230,8 @@ const AnaSayfa = () => {
         </TouchableOpacity>
         {!isActive ? (
           <TouchableOpacity style={styles.butonTas} onPress={handleStart}>
-            <Text style={styles.butonText}>Başlat</Text>
+            <Text style={styles.butonText}>
+              {leftTimes === initialTimes * 60 ? "Başlat" : "Devam"} </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.butonTas} onPress={handlePause}>
@@ -219,7 +251,7 @@ export default AnaSayfa
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    paddingTop:30,
+    paddingTop:20,
     alignItems: 'center'
   },
   kategori:{
@@ -230,18 +262,16 @@ const styles = StyleSheet.create({
     width: '100%',      
     height: 130,
     backgroundColor: 'white',
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: 2,
     borderColor: 'black',
     overflow: 'hidden'
-  },
-  listContainer: {
   },
   listItem: {
     width: '100%',    
     paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
     borderColor: 'white',
     alignItems: 'center', 
   },
@@ -255,15 +285,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   kategoriText: {
-    fontSize:30,
-    marginBottom: 10,
+    fontSize: 25, 
+    fontWeight: 'bold', 
+    marginBottom: 10, 
+    color: 'black', 
   },
   zaman:{
     width:'100%',
     flexDirection:'row',
     justifyContent:'space-evenly',
     alignItems:'center',
-    margin:90
+    margin:90,
   }, 
   butonZaman:{
     width:60,
@@ -271,6 +303,7 @@ const styles = StyleSheet.create({
     borderWidth:2,
     borderRadius:50,
     justifyContent:'center',
+    backgroundColor: 'white',
     alignItems:'center'
   }, 
   zamanText:{
@@ -279,10 +312,11 @@ const styles = StyleSheet.create({
   sayac:{
     width:200,
     height:100,
-    borderWidth:2,
+    borderWidth:3,
     borderRadius:20,
     justifyContent:'center',
-    alignItems:'center'
+    alignItems:'center',
+    backgroundColor: 'white',
   },
   sayacText:{
     fontSize:65
@@ -299,6 +333,7 @@ const styles = StyleSheet.create({
     borderWidth:2,
     borderRadius:20,
     justifyContent:'center',
+    backgroundColor: 'white',
     alignItems:'center'
   },
   butonText:{
